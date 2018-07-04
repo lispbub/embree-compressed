@@ -53,6 +53,23 @@ namespace embree
     //Accel* BVH4SubdivPatch1(Scene* scene, bool cached);
     Accel* BVH4SubdivPatch1EagerMB(Scene* scene);
 
+    ////////////////////////////////////////////////////////////////////////////////
+    /// cBVH node/leaf types
+    Accel* BVH4SubdivPatch1Oriented_CompressedNonUniform(Scene * scene);
+#ifdef COMPRESSED_USE_ALL
+    Accel* BVH4SubdivPatch1Oriented_QuantizedUniform(Scene * scene);
+    Accel* BVH4SubdivPatch1Oriented_QuantizedNonUniform(Scene * scene);
+    Accel* BVH4SubdivPatch1Oriented_CompressedUniform(Scene * scene);
+    Accel* BVH4SubdivPatch1Oriented_HalfSlabUniform(Scene * scene);
+    Accel* BVH4SubdivPatch1Oriented_HalfSlabNonUniform(Scene * scene);
+#endif
+    Accel* BVH4SubdivPatch1Oriented_FullPrecision(Scene * scene);
+
+    Accel* BVH4SubdivPatch1cGrid(Scene * scene);
+    Accel* BVH4SubdivPatch1cLeaf(Scene * scene);
+    Accel* BVH4SubdivPatch1cBox(Scene * scene);
+    ////////////////////////////////////////////////////////////////////////////////
+
     Accel* BVH4UserGeometry(Scene* scene, BuildVariant bvariant = BuildVariant::STATIC);
     Accel* BVH4UserGeometryMB(Scene* scene);
 
@@ -92,6 +109,23 @@ namespace embree
     //Accel::Intersectors BVH4SubdivPatch1CachedIntersectors(BVH4* bvh);
     Accel::Intersectors BVH4SubdivPatch1EagerMBIntersectors(BVH4* bvh);
     //Accel::Intersectors BVH4SubdivPatch1CachedMBIntersectors(BVH4* bvh);
+    
+    ////////////////////////////////////////////////////////////////////////////////
+    /// cBVH node/leaf types
+    Accel::Intersectors BVH4SubdivPatch1Oriented_CompressedNonUniformIntersectors(BVH4* bvh);
+#ifdef COMPRESSED_USE_ALL
+    Accel::Intersectors BVH4SubdivPatch1Oriented_QuantizedUniformIntersectors(BVH4* bvh);
+    Accel::Intersectors BVH4SubdivPatch1Oriented_QuantizedNonUniformIntersectors(BVH4* bvh);
+    Accel::Intersectors BVH4SubdivPatch1Oriented_CompressedUniformIntersectors(BVH4* bvh);
+    Accel::Intersectors BVH4SubdivPatch1Oriented_HalfSlabUniformIntersectors(BVH4* bvh);
+    Accel::Intersectors BVH4SubdivPatch1Oriented_HalfSlabNonUniformIntersectors(BVH4* bvh);
+#endif
+    Accel::Intersectors BVH4SubdivPatch1Oriented_FullPrecisionIntersectors(BVH4* bvh);
+
+    Accel::Intersectors BVH4SubdivPatch1cGridIntersectors(BVH4* bvh);
+    Accel::Intersectors BVH4SubdivPatch1cLeafIntersectors(BVH4* bvh);
+    Accel::Intersectors BVH4SubdivPatch1cBoxIntersectors(BVH4* bvh);
+    ////////////////////////////////////////////////////////////////////////////////
     
     static void createLineSegmentsLine4i(LineSegments* mesh, AccelData*& accel, Builder*& builder);
 
@@ -144,6 +178,23 @@ namespace embree
     //DEFINE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1CachedIntersector1);
     DEFINE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1EagerMBIntersector1);
     //DEFINE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1CachedMBIntersector1);
+
+    ////////////////////////////////////////////////////////////////////////////////
+    /// cBVH node/leaf types
+    DEFINE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1Oriented_CompressedNonUniformIntersector1);
+#ifdef COMPRESSED_USE_ALL
+    DEFINE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1Oriented_QuantizedUniformIntersector1);
+    DEFINE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1Oriented_QuantizedNonUniformIntersector1);
+    DEFINE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1Oriented_CompressedUniformIntersector1);
+    DEFINE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1Oriented_HalfSlabUniformIntersector1);
+    DEFINE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1Oriented_HalfSlabNonUniformIntersector1);
+#endif
+    DEFINE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1Oriented_FullPrecisionIntersector1);
+
+    DEFINE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1cGridIntersector1);
+    DEFINE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1cLeafIntersector1);
+    DEFINE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1cBoxIntersector1);
+    ////////////////////////////////////////////////////////////////////////////////
 
     DEFINE_SYMBOL2(Accel::Intersector1,BVH4VirtualIntersector1);
     DEFINE_SYMBOL2(Accel::Intersector1,BVH4VirtualMBIntersector1);
@@ -312,6 +363,23 @@ namespace embree
     DEFINE_ISA_FUNCTION(Builder*,BVH4SubdivPatch1EagerBuilderSAH,void* COMMA Scene* COMMA size_t);
     DEFINE_ISA_FUNCTION(Builder*,BVH4SubdivPatch1CachedBuilderSAH,void* COMMA Scene* COMMA size_t);
     DEFINE_ISA_FUNCTION(Builder*,BVH4SubdivPatch1CachedMBBuilderSAH,void* COMMA Scene* COMMA size_t);
+
+    ////////////////////////////////////////////////////////////////////////////////
+    /// cBVH node/leaf types
+    DEFINE_ISA_FUNCTION(Builder*,BVH4SubdivPatch1OrientedBuilderSAH_CompressedNonUniform,void* COMMA Scene* COMMA size_t);
+#ifdef COMPRESSED_USE_ALL
+    DEFINE_ISA_FUNCTION(Builder*,BVH4SubdivPatch1OrientedBuilderSAH_QuantizedUniform,void* COMMA Scene* COMMA size_t);
+    DEFINE_ISA_FUNCTION(Builder*,BVH4SubdivPatch1OrientedBuilderSAH_QuantizedNonUniform,void* COMMA Scene* COMMA size_t);
+    DEFINE_ISA_FUNCTION(Builder*,BVH4SubdivPatch1OrientedBuilderSAH_CompressedUniform,void* COMMA Scene* COMMA size_t);
+    DEFINE_ISA_FUNCTION(Builder*,BVH4SubdivPatch1OrientedBuilderSAH_HalfSlabUniform,void* COMMA Scene* COMMA size_t);
+    DEFINE_ISA_FUNCTION(Builder*,BVH4SubdivPatch1OrientedBuilderSAH_HalfSlabNonUniform,void* COMMA Scene* COMMA size_t);
+#endif
+    DEFINE_ISA_FUNCTION(Builder*,BVH4SubdivPatch1OrientedBuilderSAH_FullPrecision,void* COMMA Scene* COMMA size_t);
+
+    DEFINE_ISA_FUNCTION(Builder*,BVH4SubdivPatch1cGridSAH,void* COMMA Scene* COMMA size_t);
+    DEFINE_ISA_FUNCTION(Builder*,BVH4SubdivPatch1cLeafSAH,void* COMMA Scene* COMMA size_t);
+    DEFINE_ISA_FUNCTION(Builder*,BVH4SubdivPatch1cBoxSAH,void* COMMA Scene* COMMA size_t);
+    ////////////////////////////////////////////////////////////////////////////////
     
     DEFINE_ISA_FUNCTION(Builder*,BVH4VirtualSceneBuilderSAH,void* COMMA Scene* COMMA size_t);
     DEFINE_ISA_FUNCTION(Builder*,BVH4VirtualMBSceneBuilderSAH,void* COMMA Scene* COMMA size_t);

@@ -117,6 +117,9 @@ namespace embree
     /* render settings */
     Camera camera;
     Shader shader;
+    std::vector<Vec3fa> cam_dirs;
+    std::vector<Vec3fa> cam_orgs;
+    std::vector<Vec3fa> cam_ups;
 
     /* framebuffer settings */
     unsigned width;

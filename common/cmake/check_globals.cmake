@@ -24,7 +24,8 @@ string(REPLACE "\n" ";" output ${output})
 foreach (line ${output})
   if ("${line}" MATCHES "O .bss")
     if (NOT "${line}" MATCHES "std::__ioinit" AND    # this is caused by iostream initialization and is likely also ok
-        NOT "${line}" MATCHES "\\(\\)::")            # this matches a static inside a function which is fine
+        NOT "${line}" MATCHES "\\(\\)::" AND         # this matches a static inside a function which is fine
+        NOT "${line}" MATCHES "0 .hidden")           # hide 'table' static member instantiation
       message(WARNING "\nProblematic global variable in non-SSE code:\n" ${line})
     endif()
   endif()

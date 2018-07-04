@@ -510,6 +510,9 @@ namespace embree
   {
     node2geom.clear();
     RTCScene scene_out = rtcNewScene(g_device);
+
+    // store/pass-through arguments for subdivision and compression level
+    rtcSetSceneLevels(scene_out, scene_in->subdivisionLevel, scene_in->compressionLevel);
     
     /* use geometry instancing feature */
     if (g_instancing_mode == SceneGraph::INSTANCING_GEOMETRY || g_instancing_mode == SceneGraph::INSTANCING_GEOMETRY_GROUP)

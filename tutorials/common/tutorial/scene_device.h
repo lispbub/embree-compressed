@@ -266,6 +266,9 @@ namespace embree
 
     RTCScene* geomID_to_scene;
     ISPCInstance** geomID_to_inst;
+
+    unsigned subdivisionLevel;
+    unsigned compressionLevel;
   };
 
 #if !defined(ISPC)  

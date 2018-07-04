@@ -84,7 +84,8 @@ namespace embree
                   float *__restrict__ const grid_z,
                   float *__restrict__ const grid_u,
                   float *__restrict__ const grid_v,
-                  const SubdivMesh* const geom)
+                  const SubdivMesh* const geom,
+                  const bool applyDisplacement)
     {
       const unsigned dwidth  = x1-x0+1;
       const unsigned dheight = y1-y0+1;
@@ -93,7 +94,7 @@ namespace embree
 
       if (unlikely(patch.type == SubdivPatch1Base::EVAL_PATCH))
       {
-        const bool displ = geom->displFunc;
+        const bool displ = applyDisplacement && geom->displFunc;
         const unsigned N = displ ? M : 0;
         dynamic_large_stack_array(float,grid_Ng_x,N,32*32*sizeof(float));
         dynamic_large_stack_array(float,grid_Ng_y,N,32*32*sizeof(float));
@@ -318,13 +319,13 @@ namespace embree
           vfloatx y = vfloatx::loadu(&grid_y[i * VSIZEX]);
           vfloatx z = vfloatx::loadu(&grid_z[i * VSIZEX]);
 
-	  bounds_min_x = min(bounds_min_x,x);
-	  bounds_min_y = min(bounds_min_y,y);
-	  bounds_min_z = min(bounds_min_z,z);
+          bounds_min_x = min(bounds_min_x,x);
+          bounds_min_y = min(bounds_min_y,y);
+          bounds_min_z = min(bounds_min_z,z);
 
-	  bounds_max_x = max(bounds_max_x,x);
-	  bounds_max_y = max(bounds_max_y,y);
-	  bounds_max_z = max(bounds_max_z,z);
+          bounds_max_x = max(bounds_max_x,x);
+          bounds_max_y = max(bounds_max_y,y);
+          bounds_max_z = max(bounds_max_z,z);
         }
 
         b.lower.x = reduce_min(bounds_min_x);  

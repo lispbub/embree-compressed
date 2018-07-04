@@ -25,6 +25,13 @@ extern "C" ISPCScene* g_ispc_scene;
 extern "C" bool g_changed;
 extern "C" int g_instancing_mode;
 
+extern "C" bool g_adjustedCoherentBench;
+extern "C" bool g_adjustedIncoherentBench;
+Vec3fa* g_randomRayOrgs = nullptr;
+Vec3fa* g_randomRayDirs = nullptr;
+unsigned g_width = 0;
+
+
 /* scene data */
 RTCDevice g_device = nullptr;
 RTCScene g_scene = nullptr;
@@ -32,7 +39,8 @@ bool g_subdiv_mode = false;
 
 #define SPP 1
 
-#define FIXED_EDGE_TESSELLATION_VALUE 3
+//#define FIXED_EDGE_TESSELLATION_VALUE 3
+#define FORCE_FIXED_SUBD_LEVEL
 
 #define MAX_EDGE_LEVEL 64.0f
 #define MIN_EDGE_LEVEL  4.0f
@@ -120,7 +128,8 @@ void updateEdgeLevels(ISPCScene* scene_in, const Vec3fa& cam_pos)
   }
 }
 
-bool g_use_smooth_normals = false;
+// compute normals after traversal
+bool g_use_smooth_normals = true;
 void device_key_pressed_handler(int key)
 {
   if (key == 110 /*n*/) g_use_smooth_normals = !g_use_smooth_normals;
@@ -235,6 +244,8 @@ inline Vec3fa face_forward(const Vec3fa& dir, const Vec3fa& _Ng) {
   return dot(dir,Ng) < 0.0f ? Ng : neg(Ng);
 }
 
+
+
 /* task that renders a single screen tile */
 Vec3fa renderPixelStandard(float x, float y, const ISPCCamera& camera, RayStats& stats)
 {
@@ -293,7 +304,134 @@ Vec3fa renderPixelStandard(float x, float y, const ISPCCamera& camera, RayStats&
   return color*dot(neg(ray.dir),dg.Ns);
 }
 
-/* renders a single screen tile */
+
+// current renderPixel function
+typedef Vec3fa (* renderPixelFunc)(float x, float y, const ISPCCamera& camera, RayStats& stats);
+renderPixelFunc renderPixel;
+
+Vec3fa renderPixelCoherent(float x, float y, const ISPCCamera& camera, RayStats& stats) {
+  /* initialize sampler */
+  RandomSampler sampler;
+  RandomSampler_init(sampler, (int)x, (int)y, 0);
+
+  /* initialize ray */
+  Ray ray(Vec3fa(camera.xfm.p), Vec3fa(normalize(x*camera.xfm.l.vx + y*camera.xfm.l.vy + camera.xfm.l.vz)), 0.0f, inf, RandomSampler_get1D(sampler));
+
+  /* intersect ray with scene */
+  RTCIntersectContext context;
+  rtcInitIntersectContext(&context);
+  context.flags = g_iflags_coherent;
+  rtcIntersect1(g_scene,&context,RTCRayHit_(ray));
+  RayStats_addRay(stats);
+
+  /* shade background black */
+  if (ray.geomID == RTC_INVALID_GEOMETRY_ID) {
+    return Vec3fa(0.0f);
+  }
+  /* shade all rays that hit something */
+  return Vec3fa(0.5f);
+
+  /* nothign else */
+
+}
+
+
+Vec3fa renderPixelIncoherent(float x, float y, const ISPCCamera& camera, RayStats& stats)
+{
+
+  /* initialize sampler */
+  RandomSampler sampler;
+  RandomSampler_init(sampler, (int)x, (int)y, 0);
+
+  /* initialize ray */
+  const int idx = static_cast<int>(y) * g_width + static_cast<int>(x);
+  Ray ray(g_randomRayOrgs[idx], g_randomRayDirs[idx], 0.0f, inf, RandomSampler_get1D(sampler));
+
+  /* intersect ray with scene */
+  RTCIntersectContext context;
+  rtcInitIntersectContext(&context);
+  context.flags = g_iflags_incoherent;
+  rtcIntersect1(g_scene,&context,RTCRayHit_(ray));
+  RayStats_addRay(stats);
+
+  /* shade background black */
+  if (ray.geomID == RTC_INVALID_GEOMETRY_ID) {
+      return Vec3fa(0.0f);
+  }
+  /* shade all rays that hit something */
+  return Vec3fa(0.5f);
+
+  /* nothign else */
+}
+
+void makeRandomRay(Vec3fa& org, Vec3fa& dir, const BBox3fa box) {
+
+  Vec3fa pos1, pos2, diam;
+  diam = box.upper - box.lower;
+
+
+  float X = drand48();
+  float Y = drand48();
+  float Z = drand48();
+
+  pos1 = Vec3fa( X*diam.x + box.lower.x,
+                 Y*diam.y + box.lower.y,
+                 Z*diam.z + box.lower.z);
+
+  X = drand48();
+  Y = drand48();
+  Z = drand48();
+
+  pos2 = Vec3fa( X*diam.x + box.lower.x,
+                 Y*diam.y + box.lower.y,
+                 Z*diam.z + box.lower.z);
+
+  
+  org = pos1;
+  dir = normalize(pos2 - pos1);
+};
+
+void prepareRandomRays(const unsigned int width, const unsigned int height) {
+  g_randomRayOrgs = static_cast<Vec3fa*>(malloc(sizeof(Vec3fa)*width*height));
+  g_randomRayDirs = static_cast<Vec3fa*>(malloc(sizeof(Vec3fa)*width*height));
+  g_width = width;
+
+  BBox3fa global_bounding_box = empty;
+
+  ISPCGeometry** geometries = g_ispc_scene->geometries;
+
+  for (size_t i = 0 ; i < g_ispc_scene->numGeometries; ++i) {
+      if (geometries[i]->type == SUBDIV_MESH) {
+
+          ISPCSubdivMesh* mesh = (ISPCSubdivMesh*)geometries[i];
+          Vec3fa* vertices = *mesh->positions;
+
+          for (size_t k = 0; k < mesh->numVertices; ++k) {
+              global_bounding_box.extend(vertices[k]);
+
+          }
+      }
+      if (geometries[i]->type == TRIANGLE_MESH) {
+          ISPCTriangleMesh* mesh = (ISPCTriangleMesh*)geometries[i];
+          Vec3fa* vertices = *mesh->positions;
+
+          for (size_t k = 0; k < mesh->numVertices; ++k) {
+              global_bounding_box.extend(vertices[k]);
+          }
+      }
+
+  }
+
+  for (size_t y = 0; y < height; ++y)
+      for (size_t x = 0; x < width; ++x)
+          makeRandomRay(g_randomRayOrgs[y*width+x], g_randomRayDirs[y*width+x], global_bounding_box);
+
+}
+
+
+
+
+
 void renderTileStandard(int taskIndex,
                         int threadIndex,
                         int* pixels,
@@ -314,7 +452,7 @@ void renderTileStandard(int taskIndex,
 
   for (unsigned int y=y0; y<y1; y++) for (unsigned int x=x0; x<x1; x++)
   {
-    Vec3fa color = renderPixelStandard((float)x,(float)y,camera,g_stats[threadIndex]);
+    Vec3fa color = renderPixel((float)x,(float)y,camera,g_stats[threadIndex]);
 
     /* write color to framebuffer */
     unsigned int r = (unsigned int) (255.0f * clamp(color.x,0.0f,1.0f));
@@ -338,6 +476,8 @@ void renderTileTask (int taskIndex, int threadIndex, int* pixels,
 
 Vec3fa old_p;
 
+
+
 /* called by the C++ code for initialization */
 extern "C" void device_init (char* cfg)
 {
@@ -352,6 +492,15 @@ extern "C" void device_init (char* cfg)
   renderTile = renderTileStandard;
   key_pressed_handler = device_key_pressed_handler;
   old_p = Vec3fa(1E10);
+
+  // set renderPixel function
+  if (g_adjustedCoherentBench) 
+    renderPixel = renderPixelCoherent;
+  else if (g_adjustedIncoherentBench)
+    renderPixel = renderPixelIncoherent;
+  else
+    renderPixel = renderPixelStandard;
+
 }
 
 /* called by the C++ code to render */
@@ -362,6 +511,9 @@ extern "C" void device_render (int* pixels,
                            const ISPCCamera& camera)
 {
   bool camera_changed = g_changed; g_changed = false;
+
+
+
 
   /* create scene */
   if (g_scene == nullptr) {
@@ -379,12 +531,18 @@ extern "C" void device_render (int* pixels,
       old_p = camera.xfm.p;
     }
 
+#ifndef FORCE_FIXED_SUBD_LEVEL
     /* update edge levels if camera changed */
     if (camera_changed && g_subdiv_mode) {
       updateEdgeLevels(g_ispc_scene,camera.xfm.p);
       rtcCommitScene (g_scene);
     }
+#endif
   }
+
+  /* create random rays */
+  if (g_adjustedIncoherentBench && (g_randomRayOrgs == nullptr || g_randomRayDirs == nullptr))
+      prepareRandomRays(width, height);
 
   /* render image */
   const int numTilesX = (width +TILE_SIZE_X-1)/TILE_SIZE_X;
@@ -402,6 +560,9 @@ extern "C" void device_cleanup ()
 {
   rtcReleaseScene (g_scene); g_scene = nullptr;
   rtcReleaseDevice(g_device); g_device = nullptr;
+
+  free(g_randomRayOrgs);
+  free(g_randomRayDirs);
 }
 
 } // namespace embree

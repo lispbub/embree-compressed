@@ -37,7 +37,9 @@ namespace embree
       quality_flags(RTC_BUILD_QUALITY_MEDIUM),
       is_build(false), modified(true),
       progressInterface(this), progress_monitor_function(nullptr), progress_monitor_ptr(nullptr), progress_monitor_counter(0), 
-      numIntersectionFiltersN(0)
+      numIntersectionFiltersN(0),
+      subdivisionLevel(6),
+      compressionLevel(3)
   {
     device->refInc();
     
@@ -137,7 +139,7 @@ namespace embree
         case /*0b00*/ 0: 
 #if defined (EMBREE_TARGET_SIMD8)
           if (device->hasISA(AVX))
-	  {
+          {
             if (quality_flags == RTC_BUILD_QUALITY_HIGH) 
               accels.add(device->bvh8_factory->BVH8Triangle4(this,BVHFactory::BuildVariant::HIGH_QUALITY,BVHFactory::IntersectVariant::FAST));
             else
@@ -170,7 +172,7 @@ namespace embree
       {
 #if defined (EMBREE_TARGET_SIMD8)
           if (device->hasISA(AVX))
-	  {
+          {
             int mode =  2*(int)isCompactAccel() + 1*(int)isRobustAccel();
             switch (mode) {
             case /*0b00*/ 0: accels.add(device->bvh8_factory->BVH8Triangle4 (this,BVHFactory::BuildVariant::DYNAMIC,BVHFactory::IntersectVariant::FAST  )); break;
@@ -292,7 +294,7 @@ namespace embree
       {
 #if defined (EMBREE_TARGET_SIMD8)
           if (device->hasISA(AVX))
-	  {
+          {
             int mode =  2*(int)isCompactAccel() + 1*(int)isRobustAccel();
             switch (mode) {
             case /*0b00*/ 0: accels.add(device->bvh8_factory->BVH8Quad4v(this,BVHFactory::BuildVariant::DYNAMIC,BVHFactory::IntersectVariant::FAST)); break;
@@ -500,6 +502,12 @@ namespace embree
     else if (device->subdiv_accel == "bvh4.subdivpatch1eager" ) accels.add(device->bvh4_factory->BVH4SubdivPatch1Eager(this));
     //else if (device->subdiv_accel == "bvh4.subdivpatch1"      ) accels.add(device->bvh4_factory->BVH4SubdivPatch1(this,false));
     //else if (device->subdiv_accel == "bvh4.subdivpatch1cached") accels.add(device->bvh4_factory->BVH4SubdivPatch1(this,true));
+    
+    // our leaf approximation  types
+    else if (device->subdiv_accel == "bvh4.compressed.grid" ) accels.add(device->bvh4_factory->BVH4SubdivPatch1cGrid(this));
+    else if (device->subdiv_accel == "bvh4.compressed.leaf" ) accels.add(device->bvh4_factory->BVH4SubdivPatch1cLeaf(this));
+    else if (device->subdiv_accel == "bvh4.compressed.box" )  accels.add(device->bvh4_factory->BVH4SubdivPatch1cBox(this));
+    else if (device->subdiv_accel == "bvh4.compressed.full" ) accels.add(device->bvh4_factory->BVH4SubdivPatch1Oriented_FullPrecision(this));
     else throw_RTCError(RTC_ERROR_INVALID_ARGUMENT,"unknown subdiv accel "+device->subdiv_accel);
 #endif
   }

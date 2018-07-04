@@ -226,6 +226,11 @@ namespace embree
     SpinLock geometriesMutex;
     bool is_build;
     bool modified;                   //!< true if scene got modified
+
+
+    unsigned subdivisionLevel;
+    unsigned compressionLevel;
+
     
     /*! global lock step task scheduler */
 #if defined(TASKING_INTERNAL) 

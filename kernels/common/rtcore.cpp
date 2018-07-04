@@ -1464,4 +1464,14 @@ namespace embree
     RTC_CATCH_END2(scene);
     return nullptr;
   }
+
+  // set subdivision and compression levels for the cBVH
+  RTC_API void rtcSetSceneLevels (RTCScene hscene, unsigned subdivisionLevel, unsigned compressionLevel)
+  {
+    Scene* scene = (Scene*) hscene;
+    RTC_CATCH_BEGIN;
+    scene->compressionLevel = compressionLevel;
+    scene->subdivisionLevel = subdivisionLevel;
+    RTC_CATCH_END2(scene);
+  }
 }

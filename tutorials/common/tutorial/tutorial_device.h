@@ -181,4 +181,9 @@ inline bool nativePacketSupported(RTCDevice device)
   else return false;
 }
 
+extern "C" unsigned g_subdivisionLevel;
+extern "C" unsigned g_compressionLevel;
+extern "C" bool g_adjustedIncoherentBench;
+extern "C" bool g_adjustedCoherentBench;
+
 } // namespace embree

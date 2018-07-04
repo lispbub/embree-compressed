@@ -22,6 +22,11 @@ namespace embree {
 #define EDGE_LEVEL 256.0f
 #define ENABLE_SMOOTH_NORMALS 0
 
+
+// our subdivision settings
+#define SUBDIVISION_LEVEL 6
+#define COMPRESSED_LEVELS 4
+
 /* scene data */
 RTCDevice g_device = nullptr;
 RTCScene g_scene = nullptr;
@@ -134,6 +139,11 @@ unsigned int addCube (RTCScene scene_i)
   float* level = (float*) rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_LEVEL, 0, RTC_FORMAT_FLOAT, sizeof(float), NUM_INDICES);
   for (size_t i=0; i<NUM_INDICES; i++) level[i] = EDGE_LEVEL;
 
+
+  // set subdivision and compression
+  rtcSetSceneLevels(scene_i, SUBDIVISION_LEVEL, COMPRESSED_LEVELS);
+  
+
   rtcSetGeometryDisplacementFunction(geom,displacementFunction);
 
   rtcCommitGeometry(geom);
@@ -221,7 +231,7 @@ Vec3fa renderPixelStandard(float x, float y, const ISPCCamera& camera, RayStats&
     if (ray.geomID > 0) {
       Vec3fa dPdu,dPdv;
       unsigned int geomID = ray.geomID; {
-        rtcInterpolate1(g_scene,geomID,ray.primID,ray.u,ray.v,RTC_BUFFER_TYPE_VERTEX,0,nullptr,&dPdu.x,&dPdv.x,3);
+        rtcInterpolate1(rtcGetGeometry(g_scene,geomID),ray.primID,ray.u,ray.v,RTC_BUFFER_TYPE_VERTEX,0,nullptr,&dPdu.x,&dPdv.x,3);
       }
       Ng = normalize(cross(dPdv,dPdu));
       dPdu = dPdu + Ng*displacement_du(P,dPdu);

@@ -31,6 +31,8 @@
 #include "../geometry/subdivpatch1eager_intersector.h"
 #include "../geometry/object_intersector.h"
 
+#include "../geometry/compressed.h"
+
 namespace embree
 {
   namespace isa

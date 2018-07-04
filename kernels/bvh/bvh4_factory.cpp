@@ -68,6 +68,24 @@ namespace embree
   //DECLARE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1CachedIntersector1);
   //DECLARE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1MBIntersector1);
   DECLARE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1EagerMBIntersector1);
+
+  ////////////////////////////////////////////////////////////////////////////////
+  /// cBVH node/leaf types
+  DECLARE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1Oriented_CompressedNonUniformIntersector1);
+#ifdef COMPRESSED_USE_ALL
+  DECLARE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1Oriented_QuantizedUniformIntersector1);
+  DECLARE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1Oriented_QuantizedNonUniformIntersector1);
+  DECLARE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1Oriented_CompressedUniformIntersector1);
+  DECLARE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1Oriented_HalfSlabUniformIntersector1);
+  DECLARE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1Oriented_HalfSlabNonUniformIntersector1);
+#endif
+  DECLARE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1Oriented_FullPrecisionIntersector1);
+
+  DECLARE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1cGridIntersector1);
+  DECLARE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1cLeafIntersector1);
+  DECLARE_SYMBOL2(Accel::Intersector1,BVH4SubdivPatch1cBoxIntersector1);
+  ////////////////////////////////////////////////////////////////////////////////
+
   DECLARE_SYMBOL2(Accel::Intersector1,BVH4VirtualIntersector1);
   DECLARE_SYMBOL2(Accel::Intersector1,BVH4VirtualMBIntersector1);
 
@@ -105,6 +123,7 @@ namespace embree
   //DECLARE_SYMBOL2(Accel::Intersector4,BVH4SubdivPatch1CachedIntersector4);
   //DECLARE_SYMBOL2(Accel::Intersector4,BVH4SubdivPatch1MBIntersector4);
   DECLARE_SYMBOL2(Accel::Intersector4,BVH4SubdivPatch1EagerMBIntersector4);
+
   DECLARE_SYMBOL2(Accel::Intersector4,BVH4VirtualIntersector4Chunk);
   DECLARE_SYMBOL2(Accel::Intersector4,BVH4VirtualMBIntersector4Chunk);
 
@@ -142,6 +161,7 @@ namespace embree
   //DECLARE_SYMBOL2(Accel::Intersector8,BVH4SubdivPatch1CachedIntersector8);
   //DECLARE_SYMBOL2(Accel::Intersector8,BVH4SubdivPatch1MBIntersector8);
   DECLARE_SYMBOL2(Accel::Intersector8,BVH4SubdivPatch1EagerMBIntersector8);
+
   DECLARE_SYMBOL2(Accel::Intersector8,BVH4VirtualIntersector8Chunk);
   DECLARE_SYMBOL2(Accel::Intersector8,BVH4VirtualMBIntersector8Chunk);
 
@@ -179,6 +199,7 @@ namespace embree
   //DECLARE_SYMBOL2(Accel::Intersector16,BVH4SubdivPatch1CachedIntersector16);
   //DECLARE_SYMBOL2(Accel::Intersector16,BVH4SubdivPatch1MBIntersector16);
   DECLARE_SYMBOL2(Accel::Intersector16,BVH4SubdivPatch1EagerMBIntersector16);
+
   DECLARE_SYMBOL2(Accel::Intersector16,BVH4VirtualIntersector16Chunk);
   DECLARE_SYMBOL2(Accel::Intersector16,BVH4VirtualMBIntersector16Chunk);
 
@@ -253,6 +274,24 @@ namespace embree
   DECLARE_ISA_FUNCTION(Builder*,BVH4SubdivPatch1CachedBuilderSAH,void* COMMA Scene* COMMA size_t);
   DECLARE_ISA_FUNCTION(Builder*,BVH4SubdivPatch1CachedMBBuilderSAH,void* COMMA Scene* COMMA size_t);
 
+  ////////////////////////////////////////////////////////////////////////////////
+  /// cBVH node/leaf types
+  DECLARE_ISA_FUNCTION(Builder*,BVH4SubdivPatch1OrientedBuilderSAH_CompressedNonUniform,void* COMMA Scene* COMMA size_t);
+#ifdef COMPRESSED_USE_ALL
+  DECLARE_ISA_FUNCTION(Builder*,BVH4SubdivPatch1OrientedBuilderSAH_QuantizedUniform,void* COMMA Scene* COMMA size_t);
+  DECLARE_ISA_FUNCTION(Builder*,BVH4SubdivPatch1OrientedBuilderSAH_QuantizedNonUniform,void* COMMA Scene* COMMA size_t);
+  DECLARE_ISA_FUNCTION(Builder*,BVH4SubdivPatch1OrientedBuilderSAH_CompressedUniform,void* COMMA Scene* COMMA size_t);
+  DECLARE_ISA_FUNCTION(Builder*,BVH4SubdivPatch1OrientedBuilderSAH_HalfSlabUniform,void* COMMA Scene* COMMA size_t);
+  DECLARE_ISA_FUNCTION(Builder*,BVH4SubdivPatch1OrientedBuilderSAH_HalfSlabNonUniform,void* COMMA Scene* COMMA size_t);
+#endif
+  DECLARE_ISA_FUNCTION(Builder*,BVH4SubdivPatch1OrientedBuilderSAH_FullPrecision,void* COMMA Scene* COMMA size_t);
+
+  DECLARE_ISA_FUNCTION(Builder*,BVH4SubdivPatch1cGridSAH,void* COMMA Scene* COMMA size_t);
+  DECLARE_ISA_FUNCTION(Builder*,BVH4SubdivPatch1cLeafSAH,void* COMMA Scene* COMMA size_t);
+  DECLARE_ISA_FUNCTION(Builder*,BVH4SubdivPatch1cBoxSAH,void* COMMA Scene* COMMA size_t);
+  ////////////////////////////////////////////////////////////////////////////////
+
+
   DECLARE_ISA_FUNCTION(Builder*,BVH4Line4iMeshRefitSAH,void* COMMA LineSegments* COMMA size_t);
   DECLARE_ISA_FUNCTION(Builder*,BVH4Triangle4MeshRefitSAH,void* COMMA TriangleMesh* COMMA size_t);
   DECLARE_ISA_FUNCTION(Builder*,BVH4Triangle4vMeshRefitSAH,void* COMMA TriangleMesh* COMMA size_t);
@@ -321,6 +360,23 @@ namespace embree
     IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_AVX_AVX512KNL(features,BVH4SubdivPatch1CachedBuilderSAH));
     IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_AVX_AVX512KNL(features,BVH4SubdivPatch1CachedMBBuilderSAH));
 
+    ////////////////////////////////////////////////////////////////////////////////
+    /// cBVH node/leaf types
+    IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_AVX_AVX512KNL(features,BVH4SubdivPatch1OrientedBuilderSAH_CompressedNonUniform));
+#ifdef COMPRESSE_USE_ALL
+    IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_AVX_AVX512KNL(features,BVH4SubdivPatch1OrientedBuilderSAH_QuantizedUniform));
+    IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_AVX_AVX512KNL(features,BVH4SubdivPatch1OrientedBuilderSAH_QuantizedNonUniform));
+    IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_AVX_AVX512KNL(features,BVH4SubdivPatch1OrientedBuilderSAH_CompressedUniform));
+    IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_AVX_AVX512KNL(features,BVH4SubdivPatch1OrientedBuilderSAH_HalfSlabUniform));
+    IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_AVX_AVX512KNL(features,BVH4SubdivPatch1OrientedBuilderSAH_HalfSlabNonUniform));
+#endif
+    IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_AVX_AVX512KNL(features,BVH4SubdivPatch1OrientedBuilderSAH_FullPrecision));
+
+    IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_AVX_AVX512KNL(features,BVH4SubdivPatch1cGridSAH));
+    IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_AVX_AVX512KNL(features,BVH4SubdivPatch1cLeafSAH));
+    IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_AVX_AVX512KNL(features,BVH4SubdivPatch1cBoxSAH));
+    ////////////////////////////////////////////////////////////////////////////////
+
     IF_ENABLED_CURVES(SELECT_SYMBOL_DEFAULT_AVX(features,BVH4Line4iMeshRefitSAH));
     IF_ENABLED_TRIS(SELECT_SYMBOL_DEFAULT_AVX_AVX512KNL(features,BVH4Triangle4MeshRefitSAH));
     IF_ENABLED_TRIS(SELECT_SYMBOL_DEFAULT_AVX_AVX512KNL(features,BVH4Triangle4vMeshRefitSAH));
@@ -373,6 +429,24 @@ namespace embree
     //IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_SSE42_AVX_AVX2_AVX512SKX(features,BVH4SubdivPatch1CachedIntersector1));
     //IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_SSE42_AVX_AVX2_AVX512SKX(features,BVH4SubdivPatch1MBIntersector1));
     IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_SSE42_AVX_AVX2_AVX512SKX(features,BVH4SubdivPatch1EagerMBIntersector1));
+
+    ////////////////////////////////////////////////////////////////////////////////
+    /// cBVH node/leaf types
+    IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_SSE42_AVX_AVX2_AVX512SKX(features,BVH4SubdivPatch1Oriented_CompressedNonUniformIntersector1));
+#ifdef COMPRESSED_USE_ALL
+    IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_SSE42_AVX_AVX2_AVX512SKX(features,BVH4SubdivPatch1Oriented_QuantizedUniformIntersector1));
+    IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_SSE42_AVX_AVX2_AVX512SKX(features,BVH4SubdivPatch1Oriented_QuantizedNonUniformIntersector1));
+    IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_SSE42_AVX_AVX2_AVX512SKX(features,BVH4SubdivPatch1Oriented_CompressedUniformIntersector1));
+    IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_SSE42_AVX_AVX2_AVX512SKX(features,BVH4SubdivPatch1Oriented_HalfSlabUniformIntersector1));
+    IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_SSE42_AVX_AVX2_AVX512SKX(features,BVH4SubdivPatch1Oriented_HalfSlabNonUniformIntersector1));
+#endif
+    IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_SSE42_AVX_AVX2_AVX512SKX(features,BVH4SubdivPatch1Oriented_FullPrecisionIntersector1));
+
+    IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_SSE42_AVX_AVX2_AVX512SKX(features,BVH4SubdivPatch1cGridIntersector1));
+    IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_SSE42_AVX_AVX2_AVX512SKX(features,BVH4SubdivPatch1cLeafIntersector1));
+    IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_SSE42_AVX_AVX2_AVX512SKX(features,BVH4SubdivPatch1cBoxIntersector1));
+    ////////////////////////////////////////////////////////////////////////////////
+
     IF_ENABLED_USER(SELECT_SYMBOL_DEFAULT_SSE42_AVX_AVX2_AVX512SKX(features,BVH4VirtualIntersector1));
     IF_ENABLED_USER(SELECT_SYMBOL_DEFAULT_SSE42_AVX_AVX2_AVX512SKX(features,BVH4VirtualMBIntersector1));
 
@@ -412,6 +486,7 @@ namespace embree
     //IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_SSE42_AVX_AVX2_AVX512SKX(features,BVH4SubdivPatch1CachedIntersector4));
     //IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_SSE42_AVX_AVX2_AVX512SKX(features,BVH4SubdivPatch1MBIntersector4));
     IF_ENABLED_SUBDIV(SELECT_SYMBOL_DEFAULT_SSE42_AVX_AVX2_AVX512SKX(features,BVH4SubdivPatch1EagerMBIntersector4));
+
     IF_ENABLED_USER(SELECT_SYMBOL_DEFAULT_SSE42_AVX_AVX2_AVX512SKX(features,BVH4VirtualIntersector4Chunk));
     IF_ENABLED_USER(SELECT_SYMBOL_DEFAULT_SSE42_AVX_AVX2_AVX512SKX(features,BVH4VirtualMBIntersector4Chunk));
     IF_ENABLED_QUADS(SELECT_SYMBOL_DEFAULT_SSE42_AVX_AVX2_AVX512SKX(features,BVH4Quad4vIntersector4HybridMoeller));
@@ -451,6 +526,7 @@ namespace embree
     //IF_ENABLED_SUBDIV(SELECT_SYMBOL_INIT_AVX_AVX2_AVX512SKX(features,BVH4SubdivPatch1CachedIntersector8));
     //IF_ENABLED_SUBDIV(SELECT_SYMBOL_INIT_AVX_AVX2_AVX512SKX(features,BVH4SubdivPatch1MBIntersector8));
     IF_ENABLED_SUBDIV(SELECT_SYMBOL_INIT_AVX_AVX2_AVX512SKX(features,BVH4SubdivPatch1EagerMBIntersector8));
+
     IF_ENABLED_USER(SELECT_SYMBOL_INIT_AVX_AVX2_AVX512SKX(features,BVH4VirtualIntersector8Chunk));
     IF_ENABLED_USER(SELECT_SYMBOL_INIT_AVX_AVX2_AVX512SKX(features,BVH4VirtualMBIntersector8Chunk));
 
@@ -489,6 +565,7 @@ namespace embree
     //IF_ENABLED_SUBDIV(SELECT_SYMBOL_INIT_AVX512KNL_AVX512SKX(features,BVH4SubdivPatch1CachedIntersector16));
     //IF_ENABLED_SUBDIV(SELECT_SYMBOL_INIT_AVX512KNL_AVX512SKX(features,BVH4SubdivPatch1MBIntersector16));
     IF_ENABLED_SUBDIV(SELECT_SYMBOL_INIT_AVX512KNL_AVX512SKX(features,BVH4SubdivPatch1EagerMBIntersector16));
+
     IF_ENABLED_USER(SELECT_SYMBOL_INIT_AVX512KNL_AVX512SKX(features,BVH4VirtualIntersector16Chunk));
     IF_ENABLED_USER(SELECT_SYMBOL_INIT_AVX512KNL_AVX512SKX(features,BVH4VirtualMBIntersector16Chunk));
 
@@ -932,6 +1009,94 @@ namespace embree
 #endif
     return intersectors;
   }
+
+
+  ////////////////////////////////////////////////////////////////////////////////
+  /// cBVH node/leaf types
+  Accel::Intersectors BVH4Factory::BVH4SubdivPatch1Oriented_CompressedNonUniformIntersectors(BVH4* bvh)
+  {
+    Accel::Intersectors intersectors;
+    intersectors.ptr = bvh;
+    intersectors.intersector1  = BVH4SubdivPatch1Oriented_CompressedNonUniformIntersector1();
+    return intersectors;
+  }
+
+#ifdef COMPRESSED_USE_ALL
+
+  Accel::Intersectors BVH4Factory::BVH4SubdivPatch1Oriented_QuantizedUniformIntersectors(BVH4* bvh)
+  {
+    Accel::Intersectors intersectors;
+    intersectors.ptr = bvh;
+    intersectors.intersector1  = BVH4SubdivPatch1Oriented_QuantizedUniformIntersector1();
+    return intersectors;
+  }
+
+  Accel::Intersectors BVH4Factory::BVH4SubdivPatch1Oriented_QuantizedNonUniformIntersectors(BVH4* bvh)
+  {
+    Accel::Intersectors intersectors;
+    intersectors.ptr = bvh;
+    intersectors.intersector1  = BVH4SubdivPatch1Oriented_QuantizedNonUniformIntersector1();
+    return intersectors;
+  }
+
+  Accel::Intersectors BVH4Factory::BVH4SubdivPatch1Oriented_CompressedUniformIntersectors(BVH4* bvh)
+  {
+    Accel::Intersectors intersectors;
+    intersectors.ptr = bvh;
+    intersectors.intersector1  = BVH4SubdivPatch1Oriented_CompressedUniformIntersector1();
+    return intersectors;
+  }
+
+  Accel::Intersectors BVH4Factory::BVH4SubdivPatch1Oriented_HalfSlabUniformIntersectors(BVH4* bvh)
+  {
+    Accel::Intersectors intersectors;
+    intersectors.ptr = bvh;
+    intersectors.intersector1  = BVH4SubdivPatch1Oriented_HalfSlabUniformIntersector1();
+    return intersectors;
+  }
+
+  Accel::Intersectors BVH4Factory::BVH4SubdivPatch1Oriented_HalfSlabNonUniformIntersectors(BVH4* bvh)
+  {
+    Accel::Intersectors intersectors;
+    intersectors.ptr = bvh;
+    intersectors.intersector1  = BVH4SubdivPatch1Oriented_HalfSlabNonUniformIntersector1();
+    return intersectors;
+  }
+#endif
+
+  Accel::Intersectors BVH4Factory::BVH4SubdivPatch1Oriented_FullPrecisionIntersectors(BVH4* bvh)
+  {
+    Accel::Intersectors intersectors;
+    intersectors.ptr = bvh;
+    intersectors.intersector1  = BVH4SubdivPatch1Oriented_FullPrecisionIntersector1();
+    return intersectors;
+  }
+
+  Accel::Intersectors BVH4Factory::BVH4SubdivPatch1cGridIntersectors(BVH4* bvh)
+  {
+    Accel::Intersectors intersectors;
+    intersectors.ptr = bvh;
+    intersectors.intersector1  = BVH4SubdivPatch1cGridIntersector1();
+    return intersectors;
+  }
+
+  Accel::Intersectors BVH4Factory::BVH4SubdivPatch1cLeafIntersectors(BVH4* bvh)
+  {
+    Accel::Intersectors intersectors;
+    intersectors.ptr = bvh;
+    intersectors.intersector1  = BVH4SubdivPatch1cLeafIntersector1();
+    return intersectors;
+  }
+
+  Accel::Intersectors BVH4Factory::BVH4SubdivPatch1cBoxIntersectors(BVH4* bvh)
+  {
+    Accel::Intersectors intersectors;
+    intersectors.ptr = bvh;
+    intersectors.intersector1  = BVH4SubdivPatch1cBoxIntersector1();
+    return intersectors;
+  }
+  ////////////////////////////////////////////////////////////////////////////////
+
 
 //   Accel::Intersectors BVH4Factory::BVH4SubdivPatch1CachedIntersectors(BVH4* bvh)
 //   {
@@ -1422,6 +1587,93 @@ namespace embree
       return new AccelInstance(accel,builder,intersectors);
     // }
   }
+
+  ////////////////////////////////////////////////////////////////////////////////
+  /// cBVH node/leaf types
+  Accel* BVH4Factory::BVH4SubdivPatch1Oriented_CompressedNonUniform(Scene* scene)
+  {
+    BVH4* accel = new BVH4(SubdivPatch1Cached::type,scene); // FIXME: use different type 
+    Accel::Intersectors intersectors = BVH4SubdivPatch1Oriented_CompressedNonUniformIntersectors(accel);
+    Builder* builder = BVH4SubdivPatch1OrientedBuilderSAH_CompressedNonUniform(accel,scene,0);
+    return new AccelInstance(accel,builder,intersectors);
+  }
+
+#ifdef COMPRESSED_USE_ALL
+
+  Accel* BVH4Factory::BVH4SubdivPatch1Oriented_QuantizedUniform(Scene* scene)
+  {
+    BVH4* accel = new BVH4(SubdivPatch1Cached::type,scene); // FIXME: use different type 
+    Accel::Intersectors intersectors = BVH4SubdivPatch1Oriented_QuantizedUniformIntersectors(accel);
+    Builder* builder = BVH4SubdivPatch1OrientedBuilderSAH_QuantizedUniform(accel,scene,0);
+    return new AccelInstance(accel,builder,intersectors);
+  }
+
+  Accel* BVH4Factory::BVH4SubdivPatch1Oriented_QuantizedNonUniform(Scene* scene)
+  {
+    BVH4* accel = new BVH4(SubdivPatch1Cached::type,scene); // FIXME: use different type 
+    Accel::Intersectors intersectors = BVH4SubdivPatch1Oriented_QuantizedNonUniformIntersectors(accel);
+    Builder* builder = BVH4SubdivPatch1OrientedBuilderSAH_QuantizedNonUniform(accel,scene,0);
+    return new AccelInstance(accel,builder,intersectors);
+  }
+
+  Accel* BVH4Factory::BVH4SubdivPatch1Oriented_CompressedUniform(Scene* scene)
+  {
+    BVH4* accel = new BVH4(SubdivPatch1Cached::type,scene); // FIXME: use different type 
+    Accel::Intersectors intersectors = BVH4SubdivPatch1Oriented_CompressedUniformIntersectors(accel);
+    Builder* builder = BVH4SubdivPatch1OrientedBuilderSAH_CompressedUniform(accel,scene,0);
+    return new AccelInstance(accel,builder,intersectors);
+  }
+
+
+  Accel* BVH4Factory::BVH4SubdivPatch1Oriented_HalfSlabUniform(Scene* scene)
+  {
+    BVH4* accel = new BVH4(SubdivPatch1Cached::type,scene); // FIXME: use different type 
+    Accel::Intersectors intersectors = BVH4SubdivPatch1Oriented_HalfSlabUniformIntersectors(accel);
+    Builder* builder = BVH4SubdivPatch1OrientedBuilderSAH_HalfSlabUniform(accel,scene,0);
+    return new AccelInstance(accel,builder,intersectors);
+  }
+
+  Accel* BVH4Factory::BVH4SubdivPatch1Oriented_HalfSlabNonUniform(Scene* scene)
+  {
+    BVH4* accel = new BVH4(SubdivPatch1Cached::type,scene); // FIXME: use different type 
+    Accel::Intersectors intersectors = BVH4SubdivPatch1Oriented_HalfSlabNonUniformIntersectors(accel);
+    Builder* builder = BVH4SubdivPatch1OrientedBuilderSAH_HalfSlabNonUniform(accel,scene,0);
+    return new AccelInstance(accel,builder,intersectors);
+  }
+#endif
+
+  Accel* BVH4Factory::BVH4SubdivPatch1Oriented_FullPrecision(Scene* scene)
+  {
+    BVH4* accel = new BVH4(SubdivPatch1Cached::type,scene); // FIXME: use different type 
+    Accel::Intersectors intersectors = BVH4SubdivPatch1Oriented_FullPrecisionIntersectors(accel);
+    Builder* builder = BVH4SubdivPatch1OrientedBuilderSAH_FullPrecision(accel,scene,0);
+    return new AccelInstance(accel,builder,intersectors);
+  }
+
+  Accel* BVH4Factory::BVH4SubdivPatch1cGrid(Scene* scene)
+  {
+    BVH4* accel = new BVH4(SubdivPatch1Cached::type,scene); // FIXME: use different type 
+    Accel::Intersectors intersectors = BVH4SubdivPatch1cGridIntersectors(accel);
+    Builder* builder = BVH4SubdivPatch1cGridSAH(accel,scene,0);
+    return new AccelInstance(accel,builder,intersectors);
+  }
+
+  Accel* BVH4Factory::BVH4SubdivPatch1cLeaf(Scene* scene)
+  {
+    BVH4* accel = new BVH4(SubdivPatch1Cached::type,scene); // FIXME: use different type 
+    Accel::Intersectors intersectors = BVH4SubdivPatch1cLeafIntersectors(accel);
+    Builder* builder = BVH4SubdivPatch1cLeafSAH(accel,scene,0);
+    return new AccelInstance(accel,builder,intersectors);
+  }
+
+  Accel* BVH4Factory::BVH4SubdivPatch1cBox(Scene* scene)
+  {
+    BVH4* accel = new BVH4(SubdivPatch1Cached::type,scene); // FIXME: use different type 
+    Accel::Intersectors intersectors = BVH4SubdivPatch1cBoxIntersectors(accel);
+    Builder* builder = BVH4SubdivPatch1cBoxSAH(accel,scene,0);
+    return new AccelInstance(accel,builder,intersectors);
+  }
+  ////////////////////////////////////////////////////////////////////////////////
 
   Accel* BVH4Factory::BVH4UserGeometry(Scene* scene, BuildVariant bvariant)
   {

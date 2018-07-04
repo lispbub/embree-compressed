@@ -61,6 +61,9 @@ RTC_API void rtcDetachGeometry(RTCScene scene, unsigned int geomID);
 /* Gets a geometry handle from the scene. */
 RTC_API RTCGeometry rtcGetGeometry(RTCScene scene, unsigned int geomID);
 
+/* Pass through subdivision and compression level. */
+RTC_API void rtcSetSceneLevels(RTCScene scene, unsigned subdivisionLevel, unsigned compressionLevel);
+
 
 /* Commits the scene. */
 RTC_API void rtcCommitScene(RTCScene scene);

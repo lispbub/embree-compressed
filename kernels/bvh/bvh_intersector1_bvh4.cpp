@@ -59,6 +59,24 @@ namespace embree
 
     IF_ENABLED_SUBDIV(DEFINE_INTERSECTOR1(BVH4SubdivPatch1EagerIntersector1,BVHNIntersector1<4 COMMA BVH_AN1 COMMA true COMMA SubdivPatch1EagerIntersector1>));
     IF_ENABLED_SUBDIV(DEFINE_INTERSECTOR1(BVH4SubdivPatch1EagerMBIntersector1,BVHNIntersector1<4 COMMA BVH_AN2_AN4D COMMA true COMMA SubdivPatch1EagerMBIntersector1>));
+
+    ////////////////////////////////////////////////////////////////////////////////
+    /// cBVH node/leaf types
+    IF_ENABLED_SUBDIV(DEFINE_INTERSECTOR1(BVH4SubdivPatch1Oriented_CompressedNonUniformIntersector1,BVHNIntersector1<4 COMMA BVH_AN1 COMMA true COMMA compressed::SubdivPatch1Oriented_CompressedNonUniformIntersector1>));
+#ifdef COMPRESSED_USE_ALL
+    IF_ENABLED_SUBDIV(DEFINE_INTERSECTOR1(BVH4SubdivPatch1Oriented_QuantizedUniformIntersector1,BVHNIntersector1<4 COMMA BVH_AN1 COMMA true COMMA compressed::SubdivPatch1Oriented_QuantizedUniformIntersector1>));
+    IF_ENABLED_SUBDIV(DEFINE_INTERSECTOR1(BVH4SubdivPatch1Oriented_QuantizedNonUniformIntersector1,BVHNIntersector1<4 COMMA BVH_AN1 COMMA true COMMA compressed::SubdivPatch1Oriented_QuantizedNonUniformIntersector1>));
+    IF_ENABLED_SUBDIV(DEFINE_INTERSECTOR1(BVH4SubdivPatch1Oriented_CompressedUniformIntersector1,BVHNIntersector1<4 COMMA BVH_AN1 COMMA true COMMA compressed::SubdivPatch1Oriented_CompressedUniformIntersector1>));
+    IF_ENABLED_SUBDIV(DEFINE_INTERSECTOR1(BVH4SubdivPatch1Oriented_HalfSlabUniformIntersector1,BVHNIntersector1<4 COMMA BVH_AN1 COMMA true COMMA compressed::SubdivPatch1Oriented_HalfSlabUniformIntersector1>));
+    IF_ENABLED_SUBDIV(DEFINE_INTERSECTOR1(BVH4SubdivPatch1Oriented_HalfSlabNonUniformIntersector1,BVHNIntersector1<4 COMMA BVH_AN1 COMMA true COMMA compressed::SubdivPatch1Oriented_HalfSlabNonUniformIntersector1>));
+#endif
+    IF_ENABLED_SUBDIV(DEFINE_INTERSECTOR1(BVH4SubdivPatch1Oriented_FullPrecisionIntersector1,BVHNIntersector1<4 COMMA BVH_AN1 COMMA true COMMA compressed::SubdivPatch1Oriented_FullPrecisionIntersector1>));
+
+    IF_ENABLED_SUBDIV(DEFINE_INTERSECTOR1(BVH4SubdivPatch1cGridIntersector1,BVHNIntersector1<4 COMMA BVH_AN1 COMMA true COMMA compressed::SubdivPatch1cGridIntersector1>));
+    IF_ENABLED_SUBDIV(DEFINE_INTERSECTOR1(BVH4SubdivPatch1cLeafIntersector1,BVHNIntersector1<4 COMMA BVH_AN1 COMMA true COMMA compressed::SubdivPatch1cLeafIntersector1>));
+    IF_ENABLED_SUBDIV(DEFINE_INTERSECTOR1(BVH4SubdivPatch1cBoxIntersector1,BVHNIntersector1<4 COMMA BVH_AN1 COMMA true COMMA compressed::SubdivPatch1cBoxIntersector1>));
+    ////////////////////////////////////////////////////////////////////////////////
+
     
     IF_ENABLED_USER(DEFINE_INTERSECTOR1(BVH4VirtualIntersector1,BVHNIntersector1<4 COMMA BVH_AN1 COMMA false COMMA ArrayIntersector1<ObjectIntersector1<false>> >));
     IF_ENABLED_USER(DEFINE_INTERSECTOR1(BVH4VirtualMBIntersector1,BVHNIntersector1<4 COMMA BVH_AN2_AN4D COMMA false COMMA ArrayIntersector1<ObjectIntersector1<true>> >));

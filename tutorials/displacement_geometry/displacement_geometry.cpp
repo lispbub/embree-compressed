@@ -18,10 +18,11 @@
 
 namespace embree
 {
-  struct Tutorial : public TutorialApplication 
+  // 'SceneLoadingTutorialApplication': enables subdivision arguments (compress.box .leaf .grid)
+  struct Tutorial : public SceneLoadingTutorialApplication 
   {
     Tutorial()
-      : TutorialApplication("displacement_geometry",FEATURE_RTCORE) 
+      : SceneLoadingTutorialApplication("displacement_geometry",FEATURE_RTCORE) 
     {
       /* set default camera */
       camera.from = Vec3fa(1.5f,1.5f,-1.5f);

@@ -1,0 +1,23 @@
+-i bomberman.obj
+-vp 18.21240425 20.05745888 15.46878433 
+-vi 0 0 0 
+-vd -18.21240425 -20.05745888 -15.46878433 
+-vu 0 1 0 
+-fov 90
+-size 1280 768
+-rtcore shader=default
+
+# Use compressed BVH with various leaf types:
+
+# voxelized leaf 
+#--compress.box
+
+# approximated leaf
+--compress.leaf
+
+# use full precision grid
+#--compress.grid
+
+# Set global subdivision level and number of compressed levels for the cBVH
+--subdLvl 6
+--compLvl 3

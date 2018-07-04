@@ -61,6 +61,15 @@ namespace embree
     RTCIntersectContextFlags g_iflags_incoherent = RTC_INTERSECT_CONTEXT_FLAG_INCOHERENT;
 
     RayStats* g_stats = nullptr;
+
+    unsigned g_subdivisionLevel = 5;
+    unsigned g_compressionLevel = 2;
+    bool g_adjustedIncoherentBench = false;
+    bool g_adjustedCoherentBench = false;
+
+    bool     g_scroll_cams = false;
+    unsigned g_curr_cam = 0;
+    unsigned g_num_cams = 0;
   }
 
   extern "C" int g_instancing_mode;
@@ -157,23 +166,31 @@ namespace embree
 
     /* camera settings */
     registerOption("vp", [this] (Ref<ParseStream> cin, const FileName& path) {
-        camera.from = cin->getVec3fa();
+        const Vec3fa from = cin->getVec3fa();
+        camera.from  = from;
+        cam_orgs.push_back(from);
         command_line_camera = true;
       }, "--vp <float> <float> <float>: camera position");
 
     registerOption("vi", [this] (Ref<ParseStream> cin, const FileName& path) {
-        camera.to = cin->getVec3fa();
+        const Vec3fa to = cin->getVec3fa();
+        camera.to = to;
+        cam_dirs.push_back(to);
         command_line_camera = true;
       }, "--vi <float> <float> <float>: camera lookat position");
 
     registerOption("vd", [this] (Ref<ParseStream> cin, const FileName& path) {
-        camera.to = camera.from + cin->getVec3fa();
+        const Vec3fa to = camera.from + cin->getVec3fa();
+        camera.to = to;
+        cam_dirs.push_back(to);
         command_line_camera = true;
       }, "--vd <float> <float> <float>: camera direction vector");
 
     registerOption("vu", [this] (Ref<ParseStream> cin, const FileName& path) {
-        camera.up = cin->getVec3fa();
+        const Vec3fa up = cin->getVec3fa();
+        camera.up = up;
         command_line_camera = true;
+        cam_ups.push_back(up);
       }, "--vu <float> <float> <float>: camera up vector");
 
     registerOption("fov", [this] (Ref<ParseStream> cin, const FileName& path) {
@@ -516,6 +533,52 @@ namespace embree
     registerOption("camera", [this] (Ref<ParseStream> cin, const FileName& path) {
         camera_name = cin->getString();
       }, "--camera: use camera with specified name");
+
+    // extra parameter for compressed nodes/leaves
+    registerOption("compress.grid", [this] (Ref<ParseStream> cin, const FileName& path) {
+        subdiv_mode = ",subdiv_accel=bvh4.compressed.grid";
+        rtcore += subdiv_mode;
+      }, "--compress.grid: enable compressed leaf-bvh subdiv mode with grid geometry");
+
+    registerOption("compress.leaf", [this] (Ref<ParseStream> cin, const FileName& path) {
+        subdiv_mode = ",subdiv_accel=bvh4.compressed.leaf";
+        rtcore += subdiv_mode;
+      }, "--compress.leaf: enable compressed leaf-bvh subdiv mode with patch approximation");
+
+    registerOption("compress.box", [this] (Ref<ParseStream> cin, const FileName& path) {
+        subdiv_mode = ",subdiv_accel=bvh4.compressed.box";
+        rtcore += subdiv_mode;
+      }, "--compress.box: enable compressed leaf-bvh subdiv mode with voxelization");
+
+    registerOption("compress.ref", [this] (Ref<ParseStream> cin, const FileName& path) {
+        subdiv_mode = ",subdiv_accel=bvh4.compressed.full";
+        rtcore += subdiv_mode;
+      }, "--compress.ref: compress leaf test");
+
+     registerOption("subdLvl", [this] (Ref<ParseStream> cin, const FileName& path) {
+        g_subdivisionLevel = max(cin->getInt(), 2);
+       }, "--subdLvl: set the global subdivision level (min 2)");
+
+     registerOption("compLvl", [this] (Ref<ParseStream> cin, const FileName& path) {
+        g_compressionLevel =  max(1, min(cin->getInt(), 4));
+       }, "--compLvl: set the number of compressed levels (min 1, max 4)");
+
+    registerOption("adaptedBench", [this] (Ref<ParseStream> cin, const FileName& path) {
+        std::string mode = cin->getString();
+        if      (mode == "coherent"  ) {
+            g_adjustedCoherentBench = true;
+            g_iflags_coherent   = iflags_coherent   = RTC_INTERSECT_CONTEXT_FLAG_COHERENT;
+            g_iflags_incoherent = iflags_incoherent = RTC_INTERSECT_CONTEXT_FLAG_COHERENT;
+        }
+        else if (mode == "incoherent") {
+            g_adjustedIncoherentBench = true;
+            g_iflags_coherent   = iflags_coherent   = RTC_INTERSECT_CONTEXT_FLAG_INCOHERENT;
+            g_iflags_incoherent = iflags_incoherent = RTC_INTERSECT_CONTEXT_FLAG_INCOHERENT;
+        }
+        else throw std::runtime_error("unknown ray type for adjusted bench: "+mode);
+      }, "--adjustedBensh: set ray type\n"
+      "  incoherent: random rays\n"
+      "  coherent: primary rays");
   }
 
   void TutorialApplication::initRayStats()
@@ -542,52 +605,80 @@ namespace embree
     std::cout.precision(4);
 
     resize(width,height);
-    ISPCCamera ispccamera = camera.getISPCCamera(width,height);
+
+    unsigned nDirs = cam_dirs.size();
+    const unsigned nOrgs = cam_orgs.size();
+    const unsigned nUps =  cam_ups.size();
+
+
+    if (nDirs != nOrgs || nDirs != nUps)
+        std::runtime_error("camera setup incoherent, check number of arguments");
+
+    if (nDirs == 0) {
+        cam_orgs.push_back(camera.from);
+        cam_dirs.push_back(camera.to);
+        cam_ups.push_back(camera.up);
+        nDirs = 1;
+    }
+
 
     //Statistics stat;
     FilteredStatistics fpsStat(0.5f,0.0f);
     FilteredStatistics mraypsStat(0.5f,0.0f);
-    {
-      size_t numTotalFrames = skipBenchmarkFrames + numBenchmarkFrames;
-      for (size_t i=0; i<skipBenchmarkFrames; i++)
-      {
-        initRayStats();
-        double t0 = getSeconds();
-        device_render(pixels,width,height,0.0f,ispccamera);
-        double t1 = getSeconds();
-        std::cout << "frame [" << std::setw(3) << i << " / " << std::setw(3) << numTotalFrames << "]: " <<  std::setw(8) << 1.0/(t1-t0) << " fps (skipped)" << std::endl << std::flush;
-      }
 
-      for (size_t i=skipBenchmarkFrames; i<numTotalFrames; i++)
-      {
-        initRayStats();
-        double t0 = getSeconds();
-        device_render(pixels,width,height,0.0f,ispccamera);
-        double t1 = getSeconds();
+    for (size_t cam = 0; cam < nDirs; ++cam) {
 
-        float fps = float(1.0/(t1-t0));
-        fpsStat.add(fps);
+        Camera tmpCam = camera;
+        tmpCam.from = cam_orgs[cam];
+        tmpCam.to   = cam_dirs[cam];
+        tmpCam.up   = cam_ups[cam];
 
-        float mrayps = float(double(getNumRays())/(1000000.0*(t1-t0)));
-        mraypsStat.add(mrayps);
+        //ISPCCamera ispccamera = camera.getISPCCamera(width,height);
+        
+        ISPCCamera ispccamera = tmpCam.getISPCCamera(width,height);
 
-        if (numTotalFrames >= 1024 && (i % 64 == 0))
         {
-          std::cout << "frame [" << std::setw(3) << i << " / " << std::setw(3) << numTotalFrames << "]: "
-                    << std::setw(8) << fps << " fps, "
-                    << "min = " << std::setw(8) << fpsStat.getMin() << " fps, "
-                    << "avg = " << std::setw(8) << fpsStat.getAvg() << " fps, "
-                    << "max = " << std::setw(8) << fpsStat.getMax() << " fps, "
-                    << "sigma = " << std::setw(6) << fpsStat.getSigma() << " (" << 100.0f*fpsStat.getSigma()/fpsStat.getAvg() << "%)" << std::endl << std::flush;
-        }
-      }
+            size_t numTotalFrames = skipBenchmarkFrames + numBenchmarkFrames;
+            for (size_t i=0; i<skipBenchmarkFrames; i++)
+            {
+                initRayStats();
+                double t0 = getSeconds();
+                device_render(pixels,width,height,0.0f,ispccamera);
+                double t1 = getSeconds();
+                std::cout << "frame [" << std::setw(3) << i << " / " << std::setw(3) << numTotalFrames << "]: " <<  std::setw(8) << 1.0/(t1-t0) << " fps (skipped)" << std::endl << std::flush;
+            }
 
-      std::cout << "frame [" << std::setw(3) << skipBenchmarkFrames << " - " << std::setw(3) << numTotalFrames << "]: "
+            for (size_t i=skipBenchmarkFrames; i<numTotalFrames; i++)
+            {
+                initRayStats();
+                double t0 = getSeconds();
+                device_render(pixels,width,height,0.0f,ispccamera);
+                double t1 = getSeconds();
+
+                float fps = float(1.0/(t1-t0));
+                fpsStat.add(fps);
+
+                float mrayps = float(double(getNumRays())/(1000000.0*(t1-t0)));
+                mraypsStat.add(mrayps);
+
+                if (numTotalFrames >= 1024 && (i % 64 == 0))
+                {
+                    std::cout << "frame [" << std::setw(3) << i << " / " << std::setw(3) << numTotalFrames << "]: "
+                        << std::setw(8) << fps << " fps, "
+                        << "min = " << std::setw(8) << fpsStat.getMin() << " fps, "
+                        << "avg = " << std::setw(8) << fpsStat.getAvg() << " fps, "
+                        << "max = " << std::setw(8) << fpsStat.getMax() << " fps, "
+                        << "sigma = " << std::setw(6) << fpsStat.getSigma() << " (" << 100.0f*fpsStat.getSigma()/fpsStat.getAvg() << "%)" << std::endl << std::flush;
+                }
+            }
+
+            std::cout << "frame [" << std::setw(3) << skipBenchmarkFrames << " - " << std::setw(3) << numTotalFrames << "]: "
                 << "              "
                 << "min = " << std::setw(8) << fpsStat.getMin() << " fps, "
                 << "avg = " << std::setw(8) << fpsStat.getAvg() << " fps, "
                 << "max = " << std::setw(8) << fpsStat.getMax() << " fps, "
                 << "sigma = " << std::setw(6) << fpsStat.getAvgSigma() << " (" << 100.0f*fpsStat.getAvgSigma()/fpsStat.getAvg() << "%)" << std::endl;
+        }
     }
 
     std::cout << "BENCHMARK_RENDER_MIN " << fpsStat.getMin() << std::endl;
@@ -635,6 +726,11 @@ namespace embree
   {
     ispc_scene.reset(new ISPCScene(in));
     g_ispc_scene = ispc_scene.get();
+
+    // max number of compressed levels == max subdivision level
+    g_compressionLevel = min(g_compressionLevel, g_subdivisionLevel);
+    g_ispc_scene->subdivisionLevel = g_subdivisionLevel;
+    g_ispc_scene->compressionLevel = g_compressionLevel;
   }
 
   void TutorialApplication::keyboardFunc(unsigned char key, int x, int y)
@@ -687,6 +783,8 @@ namespace embree
     case 's' : moveDelta.z = 0.0f; break;
     case 'a' : moveDelta.x = 0.0f; break;
     case 'd' : moveDelta.x = 0.0f; break;
+    case 'x' : g_curr_cam = (g_curr_cam+1)%g_num_cams; g_scroll_cams = true; break;
+    case 'y' : g_curr_cam = g_curr_cam == 0 ? g_num_cams-1 : g_curr_cam-1; g_scroll_cams = true; break;
     }
   }
 
@@ -763,11 +861,25 @@ namespace embree
 
   void TutorialApplication::displayFunc()
   {
+    /* scroll through cameras */
+     if (g_scroll_cams) {
+         camera.from = cam_orgs[g_curr_cam];
+         camera.to =   cam_dirs[g_curr_cam];
+         camera.up =   cam_ups[g_curr_cam];
+         g_scroll_cams = false;
+     }
+
+
     /* update camera */
     camera.move(moveDelta.x*speed, moveDelta.y*speed, moveDelta.z*speed);
     ISPCCamera ispccamera = camera.getISPCCamera(width,height,true);
      if (print_camera)
       std::cout << camera.str() << std::endl;
+
+
+
+
+
 
     /* render image using ISPC */
     initRayStats();
@@ -919,6 +1031,18 @@ namespace embree
     /* interactive mode */
     if (interactive)
     {
+
+        // check correct number of camera arguments
+        unsigned nDirs = cam_dirs.size();
+        const unsigned nOrgs = cam_orgs.size();
+        const unsigned nUps =  cam_ups.size();
+
+        g_num_cams = nDirs;
+        g_curr_cam = 0;
+
+        if (nDirs != nOrgs || nDirs != nUps)
+            std::runtime_error("camera setup incoherent, check number of arguments");
+
       resize(width,height);
 
       glutInit(&argc, argv);

@@ -33,6 +33,10 @@
 
 #include "../geometry/subdivpatch1cached.h"
 #include "../geometry/grid_soa.h"
+#include "../geometry/compressed.h"
+
+// force fixed subdivision level
+#define FORCE_LVL
 
 namespace embree
 {
@@ -119,6 +123,13 @@ namespace embree
             patch_eval_subdivision(mesh->getHalfEdge(0,f),[&](const Vec2f uv[4], const int subdiv[4], const float edge_level[4], int subPatch)
             {
               float level[4]; SubdivPatch1Base::computeEdgeLevels(edge_level,subdiv,level);
+#ifdef FORCE_LVL
+              level[0] = 1<<scene->subdivisionLevel;
+              level[1] = 1<<scene->subdivisionLevel;
+              level[2] = 1<<scene->subdivisionLevel;
+              level[3] = 1<<scene->subdivisionLevel;
+#endif
+              
               Vec2i grid = SubdivPatch1Base::computeGridSize(level);
               size_t num = getNumEagerLeaves(grid.x,grid.y);
               g+=num;
@@ -149,7 +160,16 @@ namespace embree
             
             patch_eval_subdivision(mesh->getHalfEdge(0,f),[&](const Vec2f uv[4], const int subdiv[4], const float edge_level[4], int subPatch)
             {
+#ifdef FORCE_LVL
+              float level[4]; int sub[4];
+              sub[0] = level[0] = scene->subdivisionLevel;
+              sub[1] = level[1] = scene->subdivisionLevel;
+              sub[2] = level[2] = scene->subdivisionLevel;
+              sub[3] = level[3] = scene->subdivisionLevel;
+              SubdivPatch1Base patch(mesh->geomID,unsigned(f),subPatch,mesh,0,uv,level,sub,VSIZEX);
+#else
               SubdivPatch1Base patch(mesh->geomID,unsigned(f),subPatch,mesh,0,uv,edge_level,subdiv,VSIZEX);
+#endif
               size_t num = createEager(patch,scene,mesh,unsigned(f),alloc,&prims[base.end+s.end]);
               assert(num == getNumEagerLeaves(patch.grid_u_res,patch.grid_v_res));
               for (size_t i=0; i<num; i++)
@@ -181,8 +201,8 @@ namespace embree
         bvh->set(root,LBBox3fa(pinfo.geomBounds),pinfo.size());
         bvh->layoutLargeNodes(size_t(pinfo.size()*0.005f));
         
-	/* clear temporary data for static geometry */
-	if (scene->isStaticAccel()) {
+    /* clear temporary data for static geometry */
+    if (scene->isStaticAccel()) {
           prims.clear();
           bvh->shrink();
         }
@@ -427,8 +447,8 @@ namespace embree
         /* switch between fast and slow mode */
         rebuild(numSubPatches,numSubPatchesMB);
         
-	/* clear temporary data for static geometry */
-	if (scene->isStaticAccel()) {
+    /* clear temporary data for static geometry */
+    if (scene->isStaticAccel()) {
           prims.clear();
           bvh->shrink();
         }
@@ -642,8 +662,8 @@ namespace embree
         /* rebuild BVH */
         rebuild(numSubPatches);
         
-	/* clear temporary data for static geometry */
-	if (scene->isStaticAccel()) {
+    /* clear temporary data for static geometry */
+    if (scene->isStaticAccel()) {
           primsMB.clear();
           bvh->shrink();
         }
@@ -655,11 +675,215 @@ namespace embree
         primsMB.clear();
       }
     };
+
+    // =======================================================================================================
+    // =======================================================================================================
+    // =======================================================================================================
+
+
+    template<int N, typename node_t, bool use_grid = false, bool use_leaf = false, bool use_box = true>
+    struct BVHNSubdivPatch1OrientedBuilderSAH : public Builder
+    {
+      ALIGNED_STRUCT;
+
+      typedef BVHN<N> BVH;
+      typedef typename BVH::NodeRef NodeRef;
+
+      typedef compressed::CompressedBVH<node_t, use_grid, use_leaf, use_box> cBVH;
+
+      BVH* bvh;
+      Scene* scene;
+      mvector<PrimRef> prims;
+      ParallelForForPrefixSumState<PrimInfo> pstate;
+      
+      BVHNSubdivPatch1OrientedBuilderSAH (BVH* bvh, Scene* scene)
+        : bvh(bvh), scene(scene), prims(scene->device,0) {}
+
+      static unsigned getNumOrientedLeaves(unsigned pwidth, unsigned cSubgrid) {
+        const unsigned w = (pwidth-1) / cSubgrid;
+        return w*w;
+
+      }
+
+      __forceinline static unsigned createOriented(SubdivPatch1Base& patch, Scene* scene, SubdivMesh* mesh, unsigned primID, Allocator& alloc, PrimRef* prims)
+      {
+
+        const unsigned cLevels = scene->compressionLevel;
+        const unsigned cSubgrid = 1 << cLevels;
+
+        unsigned NN = 0;
+        const unsigned x0 = 0, x1 = patch.grid_u_res-1;
+        const unsigned y0 = 0, y1 = patch.grid_v_res-1;
+        
+        for (unsigned y=y0; y<y1; y+=cSubgrid)
+        {
+          for (unsigned x=x0; x<x1; x+=cSubgrid) 
+          {
+
+            const unsigned lx0 = x, lx1 = min(lx0+cSubgrid,x1);
+            const unsigned ly0 = y, ly1 = min(ly0+cSubgrid,y1);
+            BBox3fa bounds;
+
+            cBVH* leaf = cBVH::create(&patch,lx0,lx1,ly0,ly1,cLevels,scene,alloc, &bounds);
+            *prims = PrimRef(bounds, BVH4::encodeTypedLeaf(leaf,1)); prims++;
+            NN++;
+          }
+        }
+        return NN;
+      }
+
+      void build() 
+      {
+        const unsigned cLevels = scene->compressionLevel;
+        const unsigned cSubgrid = 1 << cLevels;
+
+        /* skip build for empty scene */
+        const size_t numPrimitives = scene->getNumPrimitives<SubdivMesh,false>();
+        if (numPrimitives == 0) {
+          prims.resize(numPrimitives);
+          bvh->set(BVH::emptyNode,empty,0);
+          return;
+        }
+ 
+        double t0 = bvh->preBuild(TOSTRING(isa) "::BVH" + toString(N) + "SubdivPatch1OrientedBuilderSAH");
+
+        //bvh->alloc.reset();
+        bvh->alloc.init_estimate(numPrimitives*sizeof(PrimRef));
+
+        auto progress = [&] (size_t dn) { bvh->scene->progressMonitor(double(dn)); };
+        auto virtualprogress = BuildProgressMonitorFromClosure(progress);
+
+        /* initialize allocator and parallel_for_for_prefix_sum */
+        Scene::Iterator<SubdivMesh> iter(scene);
+        pstate.init(iter,size_t(1024));
+
+        PrimInfo pinfo1 = parallel_for_for_prefix_sum0( pstate, iter, PrimInfo(empty), [&](SubdivMesh* mesh, const range<size_t>& r, size_t k) -> PrimInfo
+        { 
+          size_t p = 0;
+          size_t g = 0;
+          for (size_t f=r.begin(); f!=r.end(); ++f) {          
+            if (!mesh->valid(f)) continue;
+
+            patch_eval_subdivision(mesh->getHalfEdge(0,f),[&](const Vec2f uv[4], const int subdiv[4], const float edge_level[4], int subPatch)
+            {
+              float level[4]; SubdivPatch1Base::computeEdgeLevels(edge_level,subdiv,level);
+
+              // override
+              level[0] = 1<<scene->subdivisionLevel;
+              level[1] = 1<<scene->subdivisionLevel;
+              level[2] = 1<<scene->subdivisionLevel;
+              level[3] = 1<<scene->subdivisionLevel;
+            
+              Vec2i grid = SubdivPatch1Base::computeGridSize(level);
+
+              size_t num = getNumOrientedLeaves(grid.x,cSubgrid);
+              g+=num;
+              p++;
+            });
+          }
+          return PrimInfo(p,g,empty);
+        }, [](const PrimInfo& a, const PrimInfo& b) -> PrimInfo { return PrimInfo(a.begin+b.begin,a.end+b.end,empty); });
+
+
+
+        size_t numSubPatches = pinfo1.begin;
+        if (numSubPatches == 0) {
+          bvh->set(BVH::emptyNode,empty,0);
+          return;
+        }
+
+        prims.resize(pinfo1.end);
+        if (pinfo1.end == 0) {
+          bvh->set(BVH::emptyNode,empty,0);
+          return;
+        }
+
+        PrimInfo pinfo3 = parallel_for_for_prefix_sum1( pstate, iter, PrimInfo(empty), [&](SubdivMesh* mesh, const range<size_t>& r, size_t k, const PrimInfo& base) -> PrimInfo
+        {
+          Allocator alloc = bvh->alloc.getCachedAllocator();
+          
+          PrimInfo s(empty);
+          for (size_t f=r.begin(); f!=r.end(); ++f) {
+            if (!mesh->valid(f)) continue;
+
+            patch_eval_subdivision(mesh->getHalfEdge(0,f),[&](const Vec2f uv[4], const int subdiv[4], const float edge_level[4], int subPatch)
+            {
+              float level[4]; int sub[4];
+              sub[0] = level[0] = scene->subdivisionLevel;
+              sub[1] = level[1] = scene->subdivisionLevel;
+              sub[2] = level[2] = scene->subdivisionLevel;
+              sub[3] = level[3] = scene->subdivisionLevel;
+
+              SubdivPatch1Base patch(mesh->geomID,unsigned(f),subPatch,mesh,0,uv,level,sub,VSIZEX);
+              size_t num = createOriented(patch,scene,mesh,unsigned(f),alloc,&prims[base.end+s.end]);
+              assert(num == getNumOrientedLeaves(patch.grid_u_res,cSubgrid));
+
+              for (size_t i=0; i<num; i++)
+                s.add_center2(prims[base.end+s.end]);
+              s.begin++;
+            });
+          }
+          return s;
+        }, [](const PrimInfo& a, const PrimInfo& b) -> PrimInfo { return PrimInfo::merge(a, b); });
+
+        PrimInfo pinfo(0,pinfo3.end,pinfo3);
+        
+        auto createLeaf = [&] (const PrimRef* prims, const range<size_t>& range, Allocator alloc) -> NodeRef {
+          assert(range.size() == 1);
+          size_t leaf = (size_t) prims[range.begin()].ID();
+          return NodeRef(leaf);
+        };
+
+        /* settings for BVH build */
+        GeneralBVHBuilder::Settings settings;
+        settings.logBlockSize = __bsr(N);
+        settings.minLeafSize = 1;
+        settings.maxLeafSize = 1;
+        settings.travCost = 1.0f;
+        settings.intCost = 1.0f;
+        settings.singleThreadThreshold = DEFAULT_SINGLE_THREAD_THRESHOLD;
+
+        NodeRef root = BVHNBuilderVirtual<N>::build(&bvh->alloc,createLeaf,virtualprogress,prims.data(),pinfo,settings);
+        bvh->set(root,LBBox3fa(pinfo.geomBounds),pinfo.size());
+        bvh->layoutLargeNodes(size_t(pinfo.size()*0.005f));
+        
+    /* clear temporary data for static geometry */
+    if (scene->isStaticAccel()) {
+          prims.clear();
+          bvh->shrink();
+        }
+        bvh->cleanup();
+        bvh->postBuild(t0);
+      }
+
+      void clear() {
+        prims.clear();
+      }
+    };
     
     /* entry functions for the scene builder */
     Builder* BVH4SubdivPatch1EagerBuilderSAH(void* bvh, Scene* scene, size_t mode) { return new BVHNSubdivPatch1EagerBuilderSAH<4>((BVH4*)bvh,scene); }
     Builder* BVH4SubdivPatch1CachedBuilderSAH(void* bvh, Scene* scene, size_t mode) { return new BVHNSubdivPatch1CachedBuilderSAH<4>((BVH4*)bvh,scene,mode); }
     Builder* BVH4SubdivPatch1CachedMBBuilderSAH(void* bvh, Scene* scene, size_t mode) { return new BVHNSubdivPatch1CachedMBlurBuilderSAH<4>((BVH4*)bvh,scene,mode); }
+
+    /* oriented leaf-level BVHs */
+    Builder* BVH4SubdivPatch1OrientedBuilderSAH_CompressedNonUniform(void* bvh, Scene* scene, size_t mode) { return new BVHNSubdivPatch1OrientedBuilderSAH<4, compressed::compressedNonUniform>((BVH4*)bvh,scene); }
+
+#ifdef  COMPRESSED_USE_ALL
+    Builder* BVH4SubdivPatch1OrientedBuilderSAH_QuantizedUniform(void* bvh, Scene* scene, size_t mode) { return new BVHNSubdivPatch1OrientedBuilderSAH<4, compressed::quantizedUniform>((BVH4*)bvh,scene); }
+    Builder* BVH4SubdivPatch1OrientedBuilderSAH_QuantizedNonUniform(void* bvh, Scene* scene, size_t mode) { return new BVHNSubdivPatch1OrientedBuilderSAH<4, compressed::quantizedNonUniform>((BVH4*)bvh,scene); }
+    Builder* BVH4SubdivPatch1OrientedBuilderSAH_CompressedUniform(void* bvh, Scene* scene, size_t mode) { return new BVHNSubdivPatch1OrientedBuilderSAH<4, compressed::compressedUniform>((BVH4*)bvh,scene); }
+    Builder* BVH4SubdivPatch1OrientedBuilderSAH_HalfSlabUniform(void* bvh, Scene* scene, size_t mode) { return new BVHNSubdivPatch1OrientedBuilderSAH<4, compressed::halfSlabUniform>((BVH4*)bvh,scene); }
+    Builder* BVH4SubdivPatch1OrientedBuilderSAH_HalfSlabNonUniform(void* bvh, Scene* scene, size_t mode) { return new BVHNSubdivPatch1OrientedBuilderSAH<4, compressed::halfSlabNonUniform>((BVH4*)bvh,scene); }
+#endif
+
+    Builder* BVH4SubdivPatch1OrientedBuilderSAH_FullPrecision(void* bvh, Scene* scene, size_t mode) { return new BVHNSubdivPatch1OrientedBuilderSAH<4, compressed::fullPrecision>((BVH4*)bvh,scene); }
+
+    Builder* BVH4SubdivPatch1cGridSAH(void* bvh, Scene* scene, size_t mode) { return new BVHNSubdivPatch1OrientedBuilderSAH<4, compressed::compressedNonUniform, true, false, false>((BVH4*)bvh,scene); }
+    Builder* BVH4SubdivPatch1cLeafSAH(void* bvh, Scene* scene, size_t mode) { return new BVHNSubdivPatch1OrientedBuilderSAH<4, compressed::compressedNonUniform, false, true, false>((BVH4*)bvh,scene); }
+    Builder* BVH4SubdivPatch1cBoxSAH(void* bvh, Scene* scene, size_t mode)  { return new BVHNSubdivPatch1OrientedBuilderSAH<4, compressed::compressedNonUniform, false, false, true>((BVH4*)bvh,scene); }
+
+
   }
 }
 #endif

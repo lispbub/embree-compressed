@@ -157,7 +157,8 @@ namespace embree
                   float *__restrict__ const grid_z,
                   float *__restrict__ const grid_u,
                   float *__restrict__ const grid_v,
-                  const SubdivMesh* const geom);
+                  const SubdivMesh* const geom,
+                  const bool applyDisplacement = true);
 
     /* eval grid over patch and stich edges when required */      
     BBox3fa evalGridBounds(const SubdivPatch1Base& patch,

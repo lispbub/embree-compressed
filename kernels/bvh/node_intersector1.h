@@ -72,11 +72,11 @@ namespace embree
         dir  = Vec3vf<Nx>(ray_dir.x[k], ray_dir.y[k], ray_dir.z[k]);
         rdir = Vec3vf<Nx>(ray_rdir.x[k], ray_rdir.y[k], ray_rdir.z[k]);
 #if defined(__AVX2__)
-	org_rdir = org*rdir;
+        org_rdir = org*rdir;
 #endif
-	nearX = nearXYZ.x[k];
-	nearY = nearXYZ.y[k];
-	nearZ = nearXYZ.z[k];
+        nearX = nearXYZ.x[k];
+        nearY = nearXYZ.y[k];
+        nearZ = nearXYZ.z[k];
         farX  = nearX ^ flip;
         farY  = nearY ^ flip;
         farZ  = nearZ ^ flip;
@@ -149,9 +149,9 @@ namespace embree
         rdir_near = Vec3vf<Nx>(ray_rdir.x[k], ray_rdir.y[k], ray_rdir.z[k]);
         rdir_far  = Vec3vf<Nx>(ray_rdir.x[k]*ulp3, ray_rdir.y[k]*ulp3, ray_rdir.z[k]*ulp3);
 
-	nearX = nearXYZ.x[k];
-	nearY = nearXYZ.y[k];
-	nearZ = nearXYZ.z[k];
+        nearX = nearXYZ.x[k];
+        nearY = nearXYZ.y[k];
+        nearZ = nearXYZ.z[k];
         farX  = nearX ^ flip;
         farY  = nearY ^ flip;
         farZ  = nearZ ^ flip;
@@ -345,6 +345,25 @@ namespace embree
       const vbool<N> vmask = tNear <= tFar;
       const size_t mask = movemask(vmask);
       dist = tNear;
+      return mask;
+    }
+
+    // copy of the above 'intersectNodeRobust', which also returns 'far'
+    template<int N, int Nx>
+      __forceinline size_t intersectNodeRobust(const typename BVHN<N>::AlignedNode* node, const TravRay<N,Nx,true>& ray, vfloat<Nx>& near, vfloat<Nx>& far)
+    {      
+      const vfloat<N> tNearX = (vfloat<N>::load((float*)((const char*)&node->lower_x+ray.nearX)) - ray.org.x) * ray.rdir_near.x;
+      const vfloat<N> tNearY = (vfloat<N>::load((float*)((const char*)&node->lower_x+ray.nearY)) - ray.org.y) * ray.rdir_near.y;
+      const vfloat<N> tNearZ = (vfloat<N>::load((float*)((const char*)&node->lower_x+ray.nearZ)) - ray.org.z) * ray.rdir_near.z;
+      const vfloat<N> tFarX  = (vfloat<N>::load((float*)((const char*)&node->lower_x+ray.farX )) - ray.org.x) * ray.rdir_far.x;
+      const vfloat<N> tFarY  = (vfloat<N>::load((float*)((const char*)&node->lower_x+ray.farY )) - ray.org.y) * ray.rdir_far.y;
+      const vfloat<N> tFarZ  = (vfloat<N>::load((float*)((const char*)&node->lower_x+ray.farZ )) - ray.org.z) * ray.rdir_far.z;
+      const vfloat<N> tNear = max(tNearX,tNearY,tNearZ,ray.tnear);
+      const vfloat<N> tFar  = min(tFarX ,tFarY ,tFarZ ,ray.tfar);
+      const vbool<N> vmask = tNear <= tFar;
+      const size_t mask = movemask(vmask);
+      near = tNear;
+      far = tFar;
       return mask;
     }
 

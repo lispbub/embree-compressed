@@ -84,7 +84,8 @@ IF (EMBREE_GEOMETRY_SUBDIVISION)
   subdiv/tessellation_cache.cpp
   subdiv/subdivpatch1base.cpp
   subdiv/catmullclark_coefficients.cpp
-  geometry/grid_soa.cpp	
+  geometry/grid_soa.cpp 
+  geometry/compressed_node.cpp
   subdiv/subdivpatch1base_eval.cpp
   bvh/bvh_builder_subdiv.cpp)
 ENDIF()
@@ -145,6 +146,7 @@ MACRO(embree_files TARGET ISA)
     LIST(APPEND ${TARGET}
         common/scene_subdiv_mesh.cpp
         geometry/grid_soa.cpp
+        geometry/compressed_node.cpp
         subdiv/subdivpatch1base_eval.cpp)
   ENDIF()
     

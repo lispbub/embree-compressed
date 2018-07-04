@@ -27,6 +27,12 @@ PROJECT(embree${EMBREE_VERSION_MAJOR})
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11)
 
+#############################
+# EIGEN for projective space
+find_package(Eigen3 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIR})
+##############################
+
 # find git version
 IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
   FIND_PACKAGE(Git)
@@ -93,7 +99,7 @@ ELSE()
   SET(EMBREE_LIB_TYPE SHARED)
 ENDIF()
 
-OPTION(EMBREE_ISPC_SUPPORT "Build Embree with support for ISPC applications." ON)
+OPTION(EMBREE_ISPC_SUPPORT "Build Embree with support for ISPC applications." OFF)
 OPTION(EMBREE_TUTORIALS    "Enable to build Embree tutorials" ON)
 
 ##############################################################################
